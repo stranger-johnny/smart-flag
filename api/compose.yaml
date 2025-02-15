@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: api
+    volumes:
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - ./src:/var/www/html
+    ports:
+      - 8080:80
