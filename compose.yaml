@@ -1,11 +1,11 @@
 version: '3'
 
 services:
-  api:
+  smart-flag:
     build:
       context: ./php
       dockerfile: Dockerfile
-    container_name: api
+    container_name: www
     volumes:
       - ./php/php.ini:/usr/local/etc/php/php.ini
       - ./src:/var/www/html

@@ -1,0 +1,7 @@
+hello-world:
+  strategies:
+    - environment: development
+      queries:
+        - key: lang
+          type: equal
+          values: ja
