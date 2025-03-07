@@ -80,3 +80,16 @@ jobs:
             echo "$pr" >> $GITHUB_ENV
           done
           echo "EOF" >> $GITHUB_ENV
+  list-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # すべてのコミットを取得
+
+      - name: List all commits in the PR
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
