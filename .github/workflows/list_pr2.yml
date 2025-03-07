@@ -19,6 +19,14 @@ jobs:
       - name: GitHub CLI の認証
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
+      - name: デバッグ情報の表示
+        run: |
+          echo "Current branch: $(git branch --show-current)"
+          echo "Available branches:"
+          git branch -a
+          echo "HEAD ref: ${{ github.head_ref }}"
+          echo "Base ref: ${{ github.base_ref }}"
+
       - name: PRをリスト
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -28,8 +36,8 @@ jobs:
 
           echo "🔍 Checking merged PRs into $headRef that are not yet in $baseRef ..."
 
-          # Get the list of commits in the PR (main..develop)
-          commits_in_pr=$(git log $baseRef..$headRef --format=%H)
+          # Get the list of commits in the PR (origin/main..origin/develop)
+          commits_in_pr=$(git log origin/$baseRef..origin/$headRef --format=%H)
 
           # Get all merged PRs into develop with necessary fields
           prs=$(gh pr list --base "$headRef" --state merged --json number,title,url,mergeCommit --limit 100)
