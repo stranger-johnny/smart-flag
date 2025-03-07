@@ -11,6 +11,9 @@ jobs:
     if: startsWith(github.head_ref, 'develop')
     runs-on: ubuntu-latest
     steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
       - name: GitHub CLI の認証
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
