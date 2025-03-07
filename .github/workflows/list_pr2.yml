@@ -19,23 +19,24 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
+
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
 
           COMMIT_OIDS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
 
           for COMMIT_OID in $COMMIT_OIDS; do
+            echo "Commit: $COMMIT_OID"
+
             PR_DETAILS_JSON=$(gh pr list --search "$COMMIT_OID" --state merged --json number,author,title --jq '.[0]')
 
             PR_NUMBER=$(echo "$PR_DETAILS_JSON" | jq -r '.number')
             PR_AUTHOR=$(echo "$PR_DETAILS_JSON" | jq -r '.author.login')
             PR_TITLE=$(echo "$PR_DETAILS_JSON" | jq -r '.title')
 
-            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-              PR_NUMBERS+=("$PR_NUMBER")
-              PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
-              PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
-            fi
+            PR_NUMBERS+=("$PR_NUMBER")
+            PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
+            PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
           done
 
           PR_NUMBERS_UNIQUE=($(echo "${PR_NUMBERS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
@@ -73,7 +74,4 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: PR一覧
-            blocks:
-              - type: "section"
-                text: ${{ steps.list-prs.outputs.slack_message }}
+            text: ${{ steps.list-prs.outputs.slack_message }}
