@@ -107,7 +107,7 @@ jobs:
           HEAD_COMMIT=${{ github.event.pull_request.head.sha }}
           
           # すべてのPRを検索して関連するものを探す
-          RELATED_PRS=$(gh pr list --state merged --search "merge commits between $BASE_COMMIT and $HEAD_COMMIT" --json number --jq '.[].number')
+          RELATED_PRS=$(gh pr list --state merged --search "merge commits between $BASE_COMMIT and $HEAD_COMMIT" --json number --jq)
           
           echo "Related PRs: $RELATED_PRS"
         env:
