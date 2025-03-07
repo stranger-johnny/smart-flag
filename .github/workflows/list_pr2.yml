@@ -29,7 +29,7 @@ jobs:
           echo "🔍 Checking merged PRs included in $headRef -> $baseRef ..."
 
           # `develop` -> `main` の PR に含まれるコミットを取得
-          commits=$(git log --pretty=format:"%H" origin/$baseRef...origin/$headRef)
+          commits=$(git log --pretty=format:"%H" origin/$baseRef..origin/$headRef)
 
           # 取得したコミットを元に PR を特定
           prs=()
