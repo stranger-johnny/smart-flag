@@ -15,7 +15,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
 
-      - name: PRをリスト
+      - name: PRをリストする
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
