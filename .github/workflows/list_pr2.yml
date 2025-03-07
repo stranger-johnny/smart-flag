@@ -133,7 +133,7 @@ jobs:
             echo "Processing commit: $COMMIT_OID"
           
             # Use gh pr list with the commit OID to find the related PR number
-            PR_NUMBER=$(gh pr list --search "$COMMIT_OID" --json number --jq '.[0].number')
+            PR_NUMBER=$(gh pr list --search "$COMMIT_OID" --json number --jq  --state merged '.[0].number')
 
             # If a PR number is found, push it into the array
             if [ -n "$PR_NUMBER" ]; then
