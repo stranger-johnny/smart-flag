@@ -43,8 +43,8 @@ jobs:
 
           REPO_OWNER=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f1)
           REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
-          
-          # Create Slack blocks JSON
+
+          # Create Slack blocks JSON with proper escaping
           SLACK_BLOCKS='{"blocks": ['
           SLACK_BLOCKS+='{"type": "header", "text": {"type": "plain_text", "text": "Merged PRs in #${{ github.event.pull_request.number }}"}},'
           SLACK_BLOCKS+='{"type": "divider"},'
@@ -57,14 +57,16 @@ jobs:
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="https://github.com/$REPO_OWNER/$REPO_NAME/pull/$PR_NUMBER"
               
-              SLACK_BLOCKS+='{"type": "section", "text": {"type": "mrkdwn", "text": "*<'$PR_LINK'|#'$PR_NUMBER'>: '$PR_TITLE'*\nAuthor: @'$PR_AUTHOR'"}},'
+              SLACK_BLOCKS+='{"type": "section", "text": {"type": "mrkdwn", "text": "*<'"$PR_LINK"'|#'"$PR_NUMBER"'>: '"$PR_TITLE"'*\nAuthor: @'"$PR_AUTHOR"'"}},'
             done
             # Remove trailing comma
             SLACK_BLOCKS=${SLACK_BLOCKS%,}
           fi
 
           SLACK_BLOCKS+=']}'
-          echo "slack_message=$SLACK_BLOCKS" >> $GITHUB_OUTPUT
+
+          # Ensure proper JSON string escaping and output
+          echo "slack_message=$(echo "$SLACK_BLOCKS" | jq -c .)" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -73,5 +75,4 @@ jobs:
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
-          payload: |
-            text: ${{ steps.list-prs.outputs.slack_message }}
+          payload: ${{ steps.list-prs.outputs.slack_message }}
