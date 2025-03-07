@@ -13,43 +13,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # すべてのコミットを取得
+          fetch-depth: 0
 
       - name: List PRs with the commit hash
         run: |
-          # Initialize an empty array to store PR details
-          PR_DETAILS=()
+          PR_NUMBERS=()
 
-          # Fetch all commit OIDs in the PR
+          declare -A PR_AUTHOR_BY_NUMBER
+          declare -A PR_TITLE_BY_NUMBER
+
           COMMIT_OIDS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
 
-          # Loop through each commit OID
           for COMMIT_OID in $COMMIT_OIDS; do
-            echo "Processing commit: $COMMIT_OID"
+            echo "Commit: $COMMIT_OID"
           
-            # Use gh pr list with the commit OID to find the related PR details
             PR_DETAILS_JSON=$(gh pr list --search "$COMMIT_OID" --state merged --json number,author,title --jq '.[0]')
 
-            # Extract PR details from the JSON response
             PR_NUMBER=$(echo "$PR_DETAILS_JSON" | jq -r '.number')
             PR_AUTHOR=$(echo "$PR_DETAILS_JSON" | jq -r '.author.login')
             PR_TITLE=$(echo "$PR_DETAILS_JSON" | jq -r '.title')
 
-            # If a PR number is found, add the details to the array
             if [ -n "$PR_NUMBER" ]; then
-              PR_DETAILS+=("PR #$PR_NUMBER - Title: \"$PR_TITLE\" by $PR_AUTHOR")
-              echo "Found PR: #$PR_NUMBER, Title: \"$PR_TITLE\", Author: $PR_AUTHOR"
-            else
-              echo "No PR found for commit $COMMIT_OID"
+              PR_NUMBERS+=($PR_NUMBER)
+              PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]=$PR_AUTHOR
+              PR_TITLE_BY_NUMBER["$PR_NUMBER"]=$PR_TITLE
             fi
           done
 
-          # Ensure PR details are unique and sort them
-          PR_DETAILS_UNIQUE=$(echo "${PR_DETAILS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+          PR_NUMBERS_UNIQUE=$(echo "${PR_NUMBERS[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')
 
-          # Print out the unique PR details
-          for PR_DETAIL in $PR_DETAILS_UNIQUE; do
-            echo "$PR_DETAIL"
+          REPO_OWNER=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f1)
+          REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
+        
+          for PR_NUMBER in $PR_NUMBERS_UNIQUE; do
+            PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
+            PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
+            PR_LINK="https://github.com/$REPO_OWNER/$REPO_NAME/pull/$PR_NUMBER"
+            echo "Title: $PR_TITLE, Author: $PR_AUTHOR, PR Link: $PR_LINK"
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
