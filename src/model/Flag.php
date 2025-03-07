@@ -21,7 +21,7 @@ class Flag
         return $this->key;
     }
 
-    // aaaaaa
+    // aaaaaaaaa
     public function evaluate(?EvaluationContext $context = null): bool
     {
         foreach ($this->strategies as $strategy) {
