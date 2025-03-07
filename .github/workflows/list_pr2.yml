@@ -107,8 +107,45 @@ jobs:
           HEAD_COMMIT=${{ github.event.pull_request.head.sha }}
           
           # すべてのPRを検索して関連するものを探す
-          RELATED_PRS=$(gh pr list --state merged --search "merge commits between $BASE_COMMIT and $HEAD_COMMIT" --json number --jq)
+          RELATED_PRS=$(gh pr list --state merged --search "merge commits between $BASE_COMMIT and $HEAD_COMMIT" --json number)
           
           echo "Related PRs: $RELATED_PRS"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  list-pr-with-commit-hash:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # すべてのコミットを取得
+
+      - name: List PRs with the commit hash
+        run: |
+          # Initialize an empty array to store PR numbers
+          PR_NUMBERS=()
+
+          # Fetch all commit OIDs in the PR
+          COMMIT_OIDS=$(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].oid')
+
+          # Loop through each commit OID
+          for COMMIT_OID in $COMMIT_OIDS; do
+            echo "Processing commit: $COMMIT_OID"
+          
+            # Use gh pr list with the commit OID to find the related PR number
+            PR_NUMBER=$(gh pr list --search "$COMMIT_OID" --json number --jq '.[0].number')
+
+            # If a PR number is found, push it into the array
+            if [ -n "$PR_NUMBER" ]; then
+              PR_NUMBERS+=($PR_NUMBER)
+              echo "Found PR number: $PR_NUMBER"
+            else
+              echo "No PR found for commit $COMMIT_OID"
+            fi
+          done
+
+          # Print the list of PR numbers
+          echo "List of PR numbers: ${PR_NUMBERS[@]}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
