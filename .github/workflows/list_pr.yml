@@ -7,8 +7,8 @@ jobs:
   example:
     runs-on: ubuntu-latest
     steps:
-    #   - name: GitHub CLI の認証
-    #     run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+      - name: GitHub CLI の認証
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
       - name: PR 一覧を取得
         run: gh pr list --repo $GITHUB_REPOSITORY

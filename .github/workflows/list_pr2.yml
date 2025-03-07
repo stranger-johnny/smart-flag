@@ -1,0 +1,41 @@
+name: List Merged PRs for Release
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+jobs:
+  list-merged-prs:
+    if: startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub CLI の認証
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+
+      - name: List Merged PRs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          headRef=${{ github.head_ref }}
+          echo "🔍 Checking merged PRs into $headRef ..."
+          
+          # Merged PRsの取得
+          prs=$(gh pr list --base "$headRef" --state merged --json number,title,url --limit 100)
+
+          # JSONデータが空でないか確認
+          if [[ -z "$prs" || "$prs" == "[]" ]]; then
+            echo "⚠️ No merged PRs found for this release branch."
+            exit 0
+          fi
+
+          # PRリストをログに出力
+          echo "✅ Merged PRs:"
+          echo "$prs" | jq -r '.[] | "- [#" + (.number | tostring) + "](" + .url + ") " + .title'
+
+          # Actionsの出力にも保存（他のジョブで使う場合）
+          echo "merged_prs<<EOF" >> $GITHUB_ENV
+          echo "$prs" | jq -r '.[] | "- [#" + (.number | tostring) + "](" + .url + ") " + .title' >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
