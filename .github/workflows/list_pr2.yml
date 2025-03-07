@@ -22,22 +22,33 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           headRef=${{ github.head_ref }}
-          echo "🔍 Checking merged PRs into $headRef ..."
-          
-          # Merged PRsの取得
-          prs=$(gh pr list --base "$headRef" --state merged --json number,title,url --limit 100)
+          baseRef=${{ github.base_ref }}
 
-          # JSONデータが空でないか確認
-          if [[ -z "$prs" || "$prs" == "[]" ]]; then
+          echo "🔍 Checking merged PRs included in $headRef -> $baseRef ..."
+
+          # `develop` -> `main` の PR に含まれるコミットを取得
+          commits=$(git log --pretty=format:"%H" origin/$baseRef..origin/$headRef)
+
+          # 取得したコミットを元に PR を特定
+          prs=()
+          while read -r commit; do
+            pr_info=$(gh pr list --state merged --json number,title,url,mergeCommit --limit 100 | jq -r --arg commit "$commit" '.[] | select(.mergeCommit == $commit) | "- [#" + (.number | tostring) + "](" + .url + ") " + .title')
+            if [[ -n "$pr_info" ]]; then
+              prs+=("$pr_info")
+            fi
+          done <<< "$commits"
+
+          # PRが見つかったか確認
+          if [[ ${#prs[@]} -eq 0 ]]; then
             echo "⚠️ No merged PRs found for this release branch."
             exit 0
           fi
 
-          # PRリストをログに出力
-          echo "✅ Merged PRs:"
-          echo "$prs" | jq -r '.[] | "- [#" + (.number | tostring) + "](" + .url + ") " + .title'
+          # PRリストを表示
+          echo "✅ Merged PRs in this release:"
+          printf "%s\n" "${prs[@]}"
 
           # Actionsの出力にも保存（他のジョブで使う場合）
           echo "merged_prs<<EOF" >> $GITHUB_ENV
-          echo "$prs" | jq -r '.[] | "- [#" + (.number | tostring) + "](" + .url + ") " + .title' >> $GITHUB_ENV
+          printf "%s\n" "${prs[@]}" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
