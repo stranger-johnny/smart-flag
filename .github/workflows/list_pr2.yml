@@ -8,7 +8,7 @@ on:
 
 jobs:
   list-merged-prs:
-    if: startsWith(github.head_ref, 'develop/')
+    if: startsWith(github.head_ref, 'develop')
     runs-on: ubuntu-latest
     steps:
       - name: GitHub CLI の認証
