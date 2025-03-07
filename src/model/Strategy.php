@@ -8,7 +8,7 @@ use OpenFeature\interfaces\flags\EvaluationContext;
 class Strategy
 {
     /**
-     * @param string $environment
+     * @param string $environment   
      * @param array<Query> $queries
      */
     public function __construct(
@@ -22,7 +22,6 @@ class Strategy
         return $this->environment;
     }
 
-    // aaa
     public function evaluate(?Attributes $attributes): bool
     {
         if ($attributes === null) {
