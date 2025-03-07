@@ -73,7 +73,7 @@ jobs:
       - name: Send to Slack
         uses: slackapi/slack-github-action@v2.0.0
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN_GITHUB_NOTIFY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
         with:
           channel-id: ${{ vars.SLACK_NOTIFY_CHANNEL_ID }}
           payload: ${{ steps.list-prs.outputs.slack_message }}
