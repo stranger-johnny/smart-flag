@@ -14,7 +14,7 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # フル履歴を取得
+          fetch-depth: 0 # 全履歴を取得
 
       - name: GitHub CLI の認証
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
@@ -24,33 +24,53 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           headRef=${{ github.head_ref }}
-          baseRef=${{ github.base_ref }}
+          echo "🔍 Checking merged PRs included in this PR from $headRef to main..."
 
-          echo "🔍 Checking merged PRs included in $headRef -> $baseRef ..."
+          # main ブランチと develop ブランチの差分コミット（merge commit と squash commit を含む）を取得
+          commits=$(git log --merges --oneline --pretty=%H origin/main..origin/$headRef)
 
-          # `develop` -> `main` の PR に含まれるコミットを取得
-          commits=$(git log --pretty=format:"%H" origin/$baseRef..origin/$headRef)
-
-          # 取得したコミットを元に PR を特定
-          prs=()
-          while read -r commit; do
-            pr_info=$(gh pr list --state merged --json number,title,url,mergeCommit --limit 100 | jq -r --arg commit "$commit" '.[] | select(.mergeCommit == $commit) | "- [#" + (.number | tostring) + "](" + .url + ") " + .title')
-            if [[ -n "$pr_info" ]]; then
-              prs+=("$pr_info")
-            fi
-          done <<< "$commits"
-
-          # PRが見つかったか確認
-          if [[ ${#prs[@]} -eq 0 ]]; then
-            echo "⚠️ No merged PRs found for this release branch."
+          if [[ -z "$commits" ]]; then
+            echo "⚠️ No new merged PRs found in this release branch compared to main."
             exit 0
           fi
 
-          # PRリストを表示
-          echo "✅ Merged PRs in this release:"
-          printf "%s\n" "${prs[@]}"
+          merged_prs_array=() # PR情報を格納する配列
+
+          # 各コミットからPR番号を抽出 (Merge commit と Squash commit 両対応)
+          while IFS= read -r commit_sha; do
+            commit_message=$(git show -s --format=%B $commit_sha)
+            # より汎用的なパターンでPR番号を抽出 (#に続く数字)
+            pr_number=$(echo "$commit_message" | grep -o '#\d+')
+            if [[ -n "$pr_number" ]]; then
+              # '#' を削除して数値のみにする
+              pr_number_numeric=$(echo "$pr_number" | sed 's/#//g')
+              merged_prs_array+=("$pr_number_numeric")
+            fi
+          done < <(echo "$commits")
+
+          if [[ ${#merged_prs_array[@]} -eq 0 ]]; then
+            echo "⚠️ No new merged PRs found in this release branch compared to main."
+            exit 0
+          fi
+
+          echo "✅ New Merged PRs since last main branch update:"
+
+          # 重複を削除し、PR番号でソート
+          unique_prs=($(printf '%s\n' "${merged_prs_array[@]}" | sort -u))
+
+          # PR情報を取得してリスト表示とActions出力に保存
+          output=""
+          while IFS= read -r pr_number; do
+            pr_info=$(gh pr view "$pr_number" --json number,title,url)
+            if [[ -n "$pr_info" ]]; then
+              pr_jq=$(echo "$pr_info" | jq -r '. | "- [#" + (.number | tostring) + "](" + .url + ") " + .title')
+              echo "$pr_jq"
+              output+="$pr_jq"$'\n'
+            fi
+          done < <(printf '%s\n' "${unique_prs[@]}")
+
 
           # Actionsの出力にも保存（他のジョブで使う場合）
           echo "merged_prs<<EOF" >> $GITHUB_ENV
-          printf "%s\n" "${prs[@]}" >> $GITHUB_ENV
+          echo "$output" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
