@@ -75,6 +75,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
         with:
-          method: chat.postMessage
-          channel-id: ${{ vars.SLACK_NOTIFY_CHANNEL_ID }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: ${{ steps.list-prs.outputs.slack_message }}
