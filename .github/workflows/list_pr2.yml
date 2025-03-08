@@ -19,6 +19,7 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
+          
           declare -A SEEN_PR_NUMBERS 
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
@@ -38,6 +39,7 @@ jobs:
             if [[ -z "${SEEN_PR_NUMBERS[$PR_NUMBER]}" ]]; then
               PR_NUMBERS+=("$PR_NUMBER")
               SEEN_PR_NUMBERS["$PR_NUMBER"]=1
+
               PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
               PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
             fi
@@ -51,67 +53,25 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
-          # JSON形式で出力
-          PR_NUMBERS_JSON=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -R . | jq -s .)
-          
-          # 連想配列をJSONに変換
-          PR_AUTHOR_JSON="{}"
-          PR_TITLE_JSON="{}"
-          PR_LINK_JSON="{}"
-          for PR_NUMBER in "${PR_NUMBERS[@]}"; do
-            PR_AUTHOR_JSON=$(echo "$PR_AUTHOR_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
-            PR_TITLE_JSON=$(echo "$PR_TITLE_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_TITLE_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
-            PR_LINK_JSON=$(echo "$PR_LINK_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_LINK_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
-          done
-
-          echo "pr_numbers=$PR_NUMBERS_JSON" >> "$GITHUB_OUTPUT"
-          echo "pr_author_by_number=$PR_AUTHOR_JSON" >> "$GITHUB_OUTPUT"
-          echo "pr_title_by_number=$PR_TITLE_JSON" >> "$GITHUB_OUTPUT"
-          echo "pr_link_by_number=$PR_LINK_JSON" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Format Slack Message as JSON Blocks
-        id: format-slack-json
-        run: |
-          PR_NUMBERS_JSON='${{ steps.list-prs.outputs.pr_numbers }}'
-          PR_AUTHOR_JSON='${{ steps.list-prs.outputs.pr_author_by_number }}'
-          PR_TITLE_JSON='${{ steps.list-prs.outputs.pr_title_by_number }}'
-          PR_LINK_JSON='${{ steps.list-prs.outputs.pr_link_by_number }}'
-
-          # JSONをパースして配列や連想配列として利用
-          PR_NUMBERS=($(echo "$PR_NUMBERS_JSON" | jq -r '.[]'))
-          declare -A PR_AUTHOR_BY_NUMBER
-          declare -A PR_TITLE_BY_NUMBER
-          declare -A PR_LINK_BY_NUMBER
-
-          while IFS="=" read -r key value; do
-            PR_AUTHOR_BY_NUMBER["$key"]="$value"
-          done < <(echo "$PR_AUTHOR_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
-          
-          while IFS="=" read -r key value; do
-            PR_TITLE_BY_NUMBER["$key"]="$value"
-          done < <(echo "$PR_TITLE_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
-          
-          while IFS="=" read -r key value; do
-            PR_LINK_BY_NUMBER["$key"]="$value"
-          done < <(echo "$PR_LINK_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
-
           SLACK_JSON="{\"blocks\": [{\"type\": \"context\", \"elements\": []}]}"
 
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
-              PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
+              PR_LINK="{PR_LINK_BY_NUMBER[$PR_NUMBER]}"
 
               BLOCK_ITEM="{\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}"
               SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks[0].elements += [$BLOCK_ITEM]")
             done
-          fi
+          else
 
-          SLACK_JSON=$(echo "$SLACK_JSON" | jq -c .)
+          # Ensure proper escaping for JSON format
+          SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
+
           echo "slack_message_json=$SLACK_JSON" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v2.0.0
@@ -121,4 +81,4 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            ${{ steps.format-slack-json.outputs.slack_message_json }}
+            ${{ steps.list-prs.outputs.slack_message_json }}
