@@ -64,7 +64,7 @@ jobs:
               BLOCK_ITEM="{\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}"
               SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks[0].elements += [$BLOCK_ITEM]")
             done
-          else
+          fi
 
           # Ensure proper escaping for JSON format
           SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
