@@ -75,4 +75,6 @@ jobs:
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
-          payload: ${{ steps.list-prs.outputs.slack_message }}
+        #   payload: ${{ steps.list-prs.outputs.slack_message }}
+          payload: |
+            text: "palindrome"
