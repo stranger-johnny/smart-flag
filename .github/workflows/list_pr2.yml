@@ -63,6 +63,7 @@ jobs:
           SLACK_JSON=$(jq -c --arg text "$SLACK_TEXT" '{"text": $text}')
 
           # Use `echo "::set-output"` to safely pass long JSON
+          echo "$SLACK_JSON"
           echo "::set-output name=slack_message::$SLACK_JSON"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
