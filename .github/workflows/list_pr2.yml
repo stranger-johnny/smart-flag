@@ -53,10 +53,10 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
-          echo "pr_numbers={PR_NUMBERS[@]}" >> "$GITHUB_OUTPUT"
-          echo "pr_author_by_number=${PR_AUTHOR_BY_NUMBER[@]}" >> "$GITHUB_OUTPUT"
-          echo "pr_title_by_number=${PR_TITLE_BY_NUMBER[@]}" >> "$GITHUB_OUTPUT"
-          echo "pr_link_by_number=${PR_LINK_BY_NUMBER[@]}" >> "$GITHUB_OUTPUT"
+          echo "pr_numbers=$PR_NUMBERS" >> "$GITHUB_OUTPUT"
+          echo "pr_author_by_number=$PR_AUTHOR_BY_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_title_by_number=$PR_TITLE_BY_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "pr_link_by_number=$PR_LINK_BY_NUMBER" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
