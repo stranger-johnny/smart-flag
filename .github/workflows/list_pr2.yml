@@ -19,6 +19,7 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
+          
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
 
