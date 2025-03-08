@@ -59,7 +59,7 @@ jobs:
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
-              PR_LINK="{PR_LINK_BY_NUMBER[$PR_NUMBER]}"
+              PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
 
               BLOCK_ITEM="{\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}"
               SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks[0].elements += [$BLOCK_ITEM]")
