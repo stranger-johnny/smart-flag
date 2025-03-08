@@ -60,6 +60,7 @@ jobs:
           fi
 
           # GitHub Actions の `GITHUB_OUTPUT` に書き込む
+          echo "$SLACK_TEXT"
           echo "slack_message=$SLACK_TEXT" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
