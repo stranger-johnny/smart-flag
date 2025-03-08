@@ -67,7 +67,7 @@ jobs:
           fi
 
           # Ensure proper escaping for JSON format
-          SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
+          #   SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
 
           echo "$SLACK_JSON" > debug.log
           cat debug.log
