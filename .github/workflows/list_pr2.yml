@@ -59,12 +59,11 @@ jobs:
             done
           fi
 
-          # Convert to JSON format
-          SLACK_JSON=$(jq -n --arg text "$SLACK_TEXT" '{"text": $text}')
+          # Convert to JSON format with proper escaping
+          SLACK_JSON=$(jq -Rs --arg text "$SLACK_TEXT" '{"text": $text}')
 
-          # Set GitHub Actions output
-          echo "$SLACK_JSON"
-          echo "slack_message=$(echo "$SLACK_JSON")" >> $GITHUB_OUTPUT
+          # Output using printf to prevent newline issues
+          printf "slack_message=%s\n" "$SLACK_JSON" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
