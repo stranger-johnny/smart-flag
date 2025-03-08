@@ -19,7 +19,6 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
-          
           declare -A SEEN_PR_NUMBERS 
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
@@ -39,7 +38,6 @@ jobs:
             if [[ -z "${SEEN_PR_NUMBERS[$PR_NUMBER]}" ]]; then
               PR_NUMBERS+=("$PR_NUMBER")
               SEEN_PR_NUMBERS["$PR_NUMBER"]=1
-
               PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
               PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
             fi
@@ -53,19 +51,26 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
+          # JSON形式で出力
           PR_NUMBERS_JSON=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -R . | jq -s .)
-          PR_AUTHOR_JSON=$(declare -p PR_AUTHOR_BY_NUMBER | sed 's/declare -A PR_AUTHOR_BY_NUMBER=//g' | jq -R 'fromjson')
-          PR_TITLE_JSON=$(declare -p PR_TITLE_BY_NUMBER | sed 's/declare -A PR_TITLE_BY_NUMBER=//g' | jq -R 'fromjson')
-          PR_LINK_JSON=$(declare -p PR_LINK_BY_NUMBER | sed 's/declare -A PR_LINK_BY_NUMBER=//g' | jq -R 'fromjson')
+          
+          # 連想配列をJSONに変換
+          PR_AUTHOR_JSON="{}"
+          PR_TITLE_JSON="{}"
+          PR_LINK_JSON="{}"
+          for PR_NUMBER in "${PR_NUMBERS[@]}"; do
+            PR_AUTHOR_JSON=$(echo "$PR_AUTHOR_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
+            PR_TITLE_JSON=$(echo "$PR_TITLE_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_TITLE_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
+            PR_LINK_JSON=$(echo "$PR_LINK_JSON" | jq --arg key "$PR_NUMBER" --arg value "${PR_LINK_BY_NUMBER[$PR_NUMBER]}" '. + {($key): $value}')
+          done
 
           echo "pr_numbers=$PR_NUMBERS_JSON" >> "$GITHUB_OUTPUT"
           echo "pr_author_by_number=$PR_AUTHOR_JSON" >> "$GITHUB_OUTPUT"
           echo "pr_title_by_number=$PR_TITLE_JSON" >> "$GITHUB_OUTPUT"
-          echo "pr_link_by_number=$PR_LINK_JSON" >> "$GITHUB_OUTPUT" 
+          echo "pr_link_by_number=$PR_LINK_JSON" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # New Step: Format Slack Message into JSON Blocks
       - name: Format Slack Message as JSON Blocks
         id: format-slack-json
         run: |
@@ -79,23 +84,33 @@ jobs:
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
           declare -A PR_LINK_BY_NUMBER
+
+          while IFS="=" read -r key value; do
+            PR_AUTHOR_BY_NUMBER["$key"]="$value"
+          done < <(echo "$PR_AUTHOR_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
           
+          while IFS="=" read -r key value; do
+            PR_TITLE_BY_NUMBER["$key"]="$value"
+          done < <(echo "$PR_TITLE_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
+          
+          while IFS="=" read -r key value; do
+            PR_LINK_BY_NUMBER["$key"]="$value"
+          done < <(echo "$PR_LINK_JSON" | jq -r 'to_entries[] | [.key, .value] | join("=")')
+
           SLACK_JSON="{\"blocks\": [{\"type\": \"context\", \"elements\": []}]}"
 
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
-              PR_LINK="https://github.com/$REPO_OWNER/$REPO_NAME/pull/$PR_NUMBER"
+              PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
 
               BLOCK_ITEM="{\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}"
               SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks[0].elements += [$BLOCK_ITEM]")
             done
-          else
+          fi
 
-          # Ensure proper escaping for JSON format
-          SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
-
+          SLACK_JSON=$(echo "$SLACK_JSON" | jq -c .)
           echo "slack_message_json=$SLACK_JSON" >> "$GITHUB_OUTPUT"
 
       - name: Send to Slack
