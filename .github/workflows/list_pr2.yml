@@ -69,6 +69,9 @@ jobs:
           # Ensure proper escaping for JSON format
           SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
 
+          echo "$SLACK_JSON" > debug.log
+          cat debug.log
+
           echo "$SLACK_JSON"
           echo "slack_message_json=$SLACK_JSON" >> "$GITHUB_OUTPUT"
         env:
