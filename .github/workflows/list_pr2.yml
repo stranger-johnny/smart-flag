@@ -59,12 +59,13 @@ jobs:
             done
           fi
 
-          # Convert to JSON format (compressed to 1 line)
-          SLACK_JSON=$(jq -c --arg text "$SLACK_TEXT" '{"text": $text}')
+          # GitHub Actions の出力形式に合わせてエスケープ
+          SLACK_TEXT="${SLACK_TEXT//'%'/'%25'}"
+          SLACK_TEXT="${SLACK_TEXT//$'\n'/'%0A'}"
+          SLACK_TEXT="${SLACK_TEXT//$'\r'/'%0D'}"
 
-          # Use `echo "::set-output"` to safely pass long JSON
-          echo "$SLACK_JSON"
-          echo "::set-output name=slack_message::$SLACK_JSON"
+          # GitHub Actions の `GITHUB_OUTPUT` に設定
+          echo "slack_message=$SLACK_TEXT" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,6 +76,5 @@ jobs:
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
-        #   payload: ${{ steps.list-prs.outputs.slack_message }}
           payload: |
-            text: "palindrome"
+            text: "${{ steps.list-prs.outputs.slack_message }}"
