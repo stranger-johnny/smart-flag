@@ -59,11 +59,11 @@ jobs:
             done
           fi
 
-          # Convert to JSON format with proper escaping
-          SLACK_JSON=$(jq -Rs --arg text "$SLACK_TEXT" '{"text": $text}')
+          # Convert to JSON format (compressed to 1 line)
+          SLACK_JSON=$(jq -c --arg text "$SLACK_TEXT" '{"text": $text}')
 
-          # Output using printf to prevent newline issues
-          printf "slack_message=%s\n" "$SLACK_JSON" >> "$GITHUB_OUTPUT"
+          # Use `echo "::set-output"` to safely pass long JSON
+          echo "::set-output name=slack_message::$SLACK_JSON"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
