@@ -19,7 +19,6 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
-
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
 
@@ -27,7 +26,6 @@ jobs:
 
           for COMMIT_OID in $COMMIT_OIDS; do
             echo "Commit: $COMMIT_OID"
-
             PR_DETAILS_JSON=$(gh pr list --search "$COMMIT_OID" --state merged --json number,author,title --jq '.[0]')
 
             PR_NUMBER=$(echo "$PR_DETAILS_JSON" | jq -r '.number')
@@ -44,7 +42,7 @@ jobs:
           REPO_OWNER=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f1)
           REPO_NAME=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
 
-          # Create Slack message as a single text field
+          # Slackメッセージを構築
           SLACK_TEXT="Merged PRs in #${{ github.event.pull_request.number }}"
 
           if [ ${#PR_NUMBERS_UNIQUE[@]} -eq 0 ]; then
@@ -55,12 +53,15 @@ jobs:
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="https://github.com/$REPO_OWNER/$REPO_NAME/pull/$PR_NUMBER"
               
-              SLACK_TEXT+="  ${PR_LINK}, ${PR_NUMBER}: ${PR_TITLE} Author: ${PR_AUTHOR}"
+              # 特殊文字をエスケープしつつ、Slackのリンク形式を使用
+              SLACK_TEXT+="\n- <$PR_LINK|#$PR_NUMBER>: ${PR_TITLE} (Author: ${PR_AUTHOR})"
             done
           fi
 
-          # GitHub Actions の `GITHUB_OUTPUT` に書き込む
-          echo "$SLACK_TEXT"
+          # エスケープ処理（Slack用に安全な形式に変換）
+          SLACK_TEXT=$(echo -e "$SLACK_TEXT" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\r')
+
+          # GitHub Actions の出力に設定
           echo "slack_message=$SLACK_TEXT" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
