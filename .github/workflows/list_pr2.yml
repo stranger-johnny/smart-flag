@@ -65,6 +65,7 @@ jobs:
           SLACK_TEXT="${SLACK_TEXT//$'\r'/'%0D'}"
 
           # GitHub Actions の `GITHUB_OUTPUT` に設定
+          echo "$SLACK_TEXT"
           echo "slack_message=$SLACK_TEXT" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
