@@ -55,7 +55,7 @@ jobs:
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="https://github.com/$REPO_OWNER/$REPO_NAME/pull/$PR_NUMBER"
               
-              SLACK_TEXT+=" | <${PR_LINK}|#${PR_NUMBER}>: ${PR_TITLE} (Author: @${PR_AUTHOR})"
+              SLACK_TEXT+="  ${PR_LINK}, ${PR_NUMBER}: ${PR_TITLE} Author: ${PR_AUTHOR}"
             done
           fi
 
@@ -73,6 +73,4 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            {
-              "text": "${{ steps.list-prs.outputs.slack_message }}"
-            }
+            text: "${{ steps.list-prs.outputs.slack_message }}"
