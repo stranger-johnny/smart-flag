@@ -67,6 +67,7 @@ jobs:
 
           # Ensure proper JSON string escaping and output
           echo "slack_message=$(echo "$SLACK_BLOCKS" | jq -c .)" >> $GITHUB_OUTPUT
+          echo "$slack_message"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
