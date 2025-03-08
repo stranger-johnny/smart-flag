@@ -73,7 +73,8 @@ jobs:
           #   cat debug.log
 
           #   echo "$SLACK_JSON"
-          echo "slack_message_json=$SLACK_JSON" >> "$GITHUB_OUTPUT"
+          COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
+          echo "slack_message_json=$COMPRESSED_JSON" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
