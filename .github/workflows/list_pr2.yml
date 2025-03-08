@@ -53,10 +53,15 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
-          echo "pr_numbers=${PR_NUMBERS[@]}" >> "$GITHUB_OUTPUT"
-          echo "pr_author_by_number=$(echo ${!PR_AUTHOR_BY_NUMBER[@]} | xargs)" >> "$GITHUB_OUTPUT"
-          echo "pr_title_by_number=$(echo ${!PR_TITLE_BY_NUMBER[@]} | xargs)" >> "$GITHUB_OUTPUT"
-          echo "pr_link_by_number=$(echo ${!PR_LINK_BY_NUMBER[@]} | xargs)" >> "$GITHUB_OUTPUT"
+          PR_NUMBERS_JSON=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -R . | jq -s .)
+          PR_AUTHOR_JSON=$(declare -p PR_AUTHOR_BY_NUMBER | sed 's/declare -A PR_AUTHOR_BY_NUMBER=//g' | jq -R 'fromjson')
+          PR_TITLE_JSON=$(declare -p PR_TITLE_BY_NUMBER | sed 's/declare -A PR_TITLE_BY_NUMBER=//g' | jq -R 'fromjson')
+          PR_LINK_JSON=$(declare -p PR_LINK_BY_NUMBER | sed 's/declare -A PR_LINK_BY_NUMBER=//g' | jq -R 'fromjson')
+
+          echo "pr_numbers=$PR_NUMBERS_JSON" >> "$GITHUB_OUTPUT"
+          echo "pr_author_by_number=$PR_AUTHOR_JSON" >> "$GITHUB_OUTPUT"
+          echo "pr_title_by_number=$PR_TITLE_JSON" >> "$GITHUB_OUTPUT"
+          echo "pr_link_by_number=$PR_LINK_JSON" >> "$GITHUB_OUTPUT" 
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -64,11 +69,17 @@ jobs:
       - name: Format Slack Message as JSON Blocks
         id: format-slack-json
         run: |
-          read -r -a PR_NUMBERS <<< "${{ steps.list-prs.outputs.pr_numbers }}"
-          read -r -a PR_AUTHOR_BY_NUMBER <<< "${{ steps.list-prs.outputs.pr_author_by_number }}"
-          read -r -a PR_TITLE_BY_NUMBER <<< "${{ steps.list-prs.outputs.pr_title_by_number }}"
-          read -r -a PR_LINK_BY_NUMBER <<< "${{ steps.list-prs.outputs.pr_link_by_number }}"
+          PR_NUMBERS_JSON='${{ steps.list-prs.outputs.pr_numbers }}'
+          PR_AUTHOR_JSON='${{ steps.list-prs.outputs.pr_author_by_number }}'
+          PR_TITLE_JSON='${{ steps.list-prs.outputs.pr_title_by_number }}'
+          PR_LINK_JSON='${{ steps.list-prs.outputs.pr_link_by_number }}'
 
+          # JSONをパースして配列や連想配列として利用
+          PR_NUMBERS=($(echo "$PR_NUMBERS_JSON" | jq -r '.[]'))
+          declare -A PR_AUTHOR_BY_NUMBER
+          declare -A PR_TITLE_BY_NUMBER
+          declare -A PR_LINK_BY_NUMBER
+          
           SLACK_JSON="{\"blocks\": [{\"type\": \"context\", \"elements\": []}]}"
 
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
