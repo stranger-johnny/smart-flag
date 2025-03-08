@@ -19,7 +19,7 @@ jobs:
         id: list-prs
         run: |
           PR_NUMBERS=()
-          
+
           declare -A PR_AUTHOR_BY_NUMBER
           declare -A PR_TITLE_BY_NUMBER
 
@@ -63,6 +63,7 @@ jobs:
           SLACK_TEXT=$(echo -e "$SLACK_TEXT" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\r')
 
           # GitHub Actions の出力に設定
+          echo "$SLACK_TEXT"
           echo "slack_message=$SLACK_TEXT" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
