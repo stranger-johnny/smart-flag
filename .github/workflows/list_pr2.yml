@@ -35,10 +35,6 @@ jobs:
             PR_AUTHOR=$(echo "$PR_DETAILS" | jq -r '.author.login')
             PR_TITLE=$(echo "$PR_DETAILS" | jq -r '.title')
 
-            PR_NUMBERS+=("$PR_NUMBER")
-            PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
-            PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
-
             if [[ -z "${SEEN_PR_NUMBERS[$PR_NUMBER]}" ]]; then
               PR_NUMBERS+=("$PR_NUMBER")
               SEEN_PR_NUMBERS["$PR_NUMBER"]=1
