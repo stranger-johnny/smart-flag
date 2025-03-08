@@ -86,3 +86,23 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             ${{ steps.list-prs.outputs.slack_message_json }}
+
+      - name: Send to Slack2
+        uses: slackapi/slack-github-action@v2.0.0
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+                "blocks": [
+                    {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Hello, this is a test message."
+                      }
+                    }
+                ]
+            }
