@@ -60,19 +60,18 @@ jobs:
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
-              SLACK_TEXT+="${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\n"
+              SLACK_TEXT+=$(printf "%s <%s|#%s> by %s\n" "$PR_TITLE" "$PR_LINK" "$PR_NUMBER" "$PR_AUTHOR")
             done
           fi
 
-          SLACK_JSON=$(jq -n \
-            --arg text "$SLACK_TEXT" \
+          SLACK_JSON=$(echo "$SLACK_TEXT" | jq -R -s \
             '{
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": $text
+                    "text": .
                   }
                 }
               ]
