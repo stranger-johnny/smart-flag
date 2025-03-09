@@ -80,6 +80,7 @@ jobs:
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
           echo "pr_numbers=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -c -s '.')" >> $GITHUB_OUTPUT
+          echo "pr_author_by_number=$(echo $PR_AUTHOR_BY_NUMBER | jq -c .)" >> $GITHUB_OUTPUT
           echo "$COMPRESSED_JSON"
           echo "slack_message_json=$COMPRESSED_JSON" >> "$GITHUB_OUTPUT"
         env:
@@ -89,7 +90,9 @@ jobs:
         id: format-message
         run: |
           PR_NUMBERS='${{ steps.list-prs.outputs.pr_numbers }}'
+          PR_AUTHOR_BY_NUMBER='${{ steps.list-prs.outputs.pr_author_by_number }}'
           echo "$PR_NUMBERS"
+          echo "$PR_AUTHOR_BY_NUMBER"
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v2.0.0
