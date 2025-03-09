@@ -53,7 +53,7 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
-          SLACK_JSON="{\"blocks\": [{\"type\": \"context\", \"elements\": []}]}"
+          SLACK_JSON="{\"blocks\": []}"
 
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
@@ -62,7 +62,7 @@ jobs:
               PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
 
               BLOCK_ITEM="{\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}"
-              SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks[0].elements += [$BLOCK_ITEM]")
+              SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks += [$BLOCK_ITEM]")
             done
           fi
 
