@@ -79,7 +79,7 @@ jobs:
 
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
-          echo "pr_numbers=$(jq -c . <<< "${PR_NUMBERS[*]}")" >> $GITHUB_OUTPUT
+          echo "pr_numbers=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -c -s '.')" >> $GITHUB_OUTPUT
           echo "$COMPRESSED_JSON"
           echo "slack_message_json=$COMPRESSED_JSON" >> "$GITHUB_OUTPUT"
         env:
