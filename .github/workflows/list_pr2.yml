@@ -80,7 +80,9 @@ jobs:
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
           echo "pr_numbers=$(printf '%s\n' "${PR_NUMBERS[@]}" | jq -c -s '.')" >> $GITHUB_OUTPUT
-          echo "pr_author_by_number=$(echo $PR_AUTHOR_BY_NUMBER | jq -c .)" >> $GITHUB_OUTPUT
+          PR_AUTHOR_JSON=$(printf '%s\n' "${!PR_AUTHOR_BY_NUMBER[@]}" "${PR_AUTHOR_BY_NUMBER[@]}" | 
+                           jq -nR 'reduce inputs as $line ({}; if .key == null then .key = $line else .[$line.key] = $line end)')
+          echo "pr_author_by_number=$PR_AUTHOR_JSON" >> $GITHUB_OUTPUT
           echo "$COMPRESSED_JSON"
           echo "slack_message_json=$COMPRESSED_JSON" >> "$GITHUB_OUTPUT"
         env:
