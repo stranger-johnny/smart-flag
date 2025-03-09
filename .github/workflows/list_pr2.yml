@@ -31,15 +31,14 @@ jobs:
             echo "Commit: $COMMIT_OID"
 
             PR_DETAILS=$(gh pr list --search "$COMMIT_OID" --state merged --json number,author,title --jq '.[0]')
-
             PR_NUMBER=$(echo "$PR_DETAILS" | jq -r '.number')
-            PR_AUTHOR=$(echo "$PR_DETAILS" | jq -r '.author.login')
-            PR_TITLE=$(echo "$PR_DETAILS" | jq -r '.title')
 
             if [[ -z "${SEEN_PR_NUMBERS[$PR_NUMBER]}" ]]; then
               PR_NUMBERS+=("$PR_NUMBER")
               SEEN_PR_NUMBERS["$PR_NUMBER"]=1
 
+              PR_AUTHOR=$(echo "$PR_DETAILS" | jq -r '.author.login')
+              PR_TITLE=$(echo "$PR_DETAILS" | jq -r '.title')
               PR_AUTHOR_BY_NUMBER["$PR_NUMBER"]="$PR_AUTHOR"
               PR_TITLE_BY_NUMBER["$PR_NUMBER"]="$PR_TITLE"
             fi
@@ -54,7 +53,7 @@ jobs:
           done
 
 
-          SLACK_SECTION_TEXT=""
+          SLACK_TEXT=""
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
@@ -78,16 +77,19 @@ jobs:
             }'
           )
 
-          #   BLOCK_ITEM="{\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": ${SLACK_SECTION_TEXT}}}"
-          #   SLACK_JSON="{\"blocks\": []}"
-          #   SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks += [$BLOCK_ITEM]")
-
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
+          echo "pr_numbers=$(jq -c . <<< "${PR_NUMBERS[*]}")" >> $GITHUB_OUTPUT
           echo "$COMPRESSED_JSON"
           echo "slack_message_json=$COMPRESSED_JSON" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Format message to send to slack
+        id: format-message
+        run: |
+          PR_NUMBERS='${{ steps.list-prs.outputs.pr_numbers }}'
+          echo "$PR_NUMBERS"
 
       - name: Send to Slack
         uses: slackapi/slack-github-action@v2.0.0
@@ -97,23 +99,3 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: ${{ steps.list-prs.outputs.slack_message_json }}
-
-      - name: Send to Slack2
-        uses: slackapi/slack-github-action@v2.0.0
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_OAUTH_TOKEN }}
-        with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
-          webhook-type: incoming-webhook
-          payload: |
-            {
-                "blocks": [
-                    {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "Hello, this is a test message."
-                      }
-                    }
-                ]
-            }
