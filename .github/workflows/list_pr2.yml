@@ -53,24 +53,22 @@ jobs:
             PR_LINK_BY_NUMBER["$PR_NUMBER"]="$PR_LINK"
           done
 
-          SLACK_JSON="{\"blocks\": []}"
 
+          SLACK_SECTION_TEXT=""
           if [ ${#PR_NUMBERS[@]} -gt 0 ]; then
             for PR_NUMBER in "${PR_NUMBERS[@]}"; do
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
+              SLACK_SECTION_TEXT+="\"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"\n"
 
               BLOCK_ITEM="{\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": \"${PR_TITLE} <${PR_LINK}|#${PR_NUMBER}> by ${PR_AUTHOR}\"}}"
               SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks += [$BLOCK_ITEM]")
             done
           fi
 
-          # Ensure proper escaping for JSON format
-          #   SLACK_JSON=$(echo "$SLACK_JSON" | sed 's/"/\\"/g' | sed "s/'/\\'/g" | tr -d '\n\r')
-
-          #   echo "$SLACK_JSON" > debug.log
-          #   cat debug.log
+          BLOCK_ITEM="{\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": ${SLACK_SECTION_TEXT}}}"
+          SLACK_JSON="{\"blocks\": [$BLOCK_ITEM]}"
 
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
