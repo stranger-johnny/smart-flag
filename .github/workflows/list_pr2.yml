@@ -60,7 +60,7 @@ jobs:
               PR_AUTHOR="${PR_AUTHOR_BY_NUMBER[$PR_NUMBER]}"
               PR_TITLE="${PR_TITLE_BY_NUMBER[$PR_NUMBER]}"
               PR_LINK="${PR_LINK_BY_NUMBER[$PR_NUMBER]}"
-              SLACK_TEXT+=$(printf "%s <%s|#%s> by %s\n" "$PR_TITLE" "$PR_LINK" "$PR_NUMBER" "$PR_AUTHOR")
+              SLACK_TEXT+=$(printf "%s <%s|#%s> by %s\n " "$PR_TITLE" "$PR_LINK" "$PR_NUMBER" "$PR_AUTHOR")
             done
           fi
 
