@@ -68,7 +68,8 @@ jobs:
           fi
 
           BLOCK_ITEM="{\"type\": \"section\", \"text\": {\"type\": \"mrkdwn\", \"text\": ${SLACK_SECTION_TEXT}}}"
-          SLACK_JSON="{\"blocks\": [$BLOCK_ITEM]}"
+          SLACK_JSON="{\"blocks\": []}"
+          SLACK_JSON=$(echo "$SLACK_JSON" | jq ".blocks += [$BLOCK_ITEM]")
 
           #   echo "$SLACK_JSON"
           COMPRESSED_JSON=$(echo "$SLACK_JSON" | jq -c .)
